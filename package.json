@@ -1,0 +1,14 @@
+{
+  "name": "air-quality",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "Ivan Navarrete",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "http-server ./src -c-1"
+  },
+  "dependencies": {
+    "d3": "^5.12.0",
+    "http-server": "^0.11.1"
+  }
+}

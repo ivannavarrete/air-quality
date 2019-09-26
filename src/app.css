@@ -1,0 +1,60 @@
+svg {
+  font-family: sans-serif;
+  font-size: 10px;
+}
+
+.xAxis {
+}
+
+.yAxis {
+  stroke: red;
+}
+
+.xtick {
+  stroke: #e8e8e8;
+  fill: none;
+}
+
+.ytick {
+  stroke: #ddd;
+  fill: none;
+}
+
+.center {
+  stroke: #aaa;
+  /*stroke-dasharray: 6;*/
+}
+
+.xAxis text {
+  alignment-baseline: middle;
+}
+
+.holiday {
+  fill: red;
+}
+
+.temp-graph path {
+  fill: url(#hatch);
+  stroke: none;
+}
+
+.legend {
+  font-weight: 200;
+  fill: #bbb;
+  white-space: pre;
+  alignment-baseline: middle;
+  text-anchor: middle;
+}
+
+.legend .month {
+  font-size: 24px;
+}
+
+.legend .year {
+  font-size: 16px;
+}
+
+pattern#hatch line {
+  stroke: #adafbf;
+  stroke-width: 1;
+}
