@@ -5,7 +5,7 @@
   "author": "Ivan Navarrete",
   "license": "UNLICENSED",
   "scripts": {
-    "start": "http-server ./src -c-1"
+    "start": "http-server ./ -c-1"
   },
   "dependencies": {
     "d3": "^5.12.0",
