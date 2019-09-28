@@ -3,10 +3,10 @@ svg {
   font-size: 10px;
 }
 
-.xAxis {
+.x-axis {
 }
 
-.yAxis {
+.y-axis {
   stroke: red;
 }
 
@@ -20,9 +20,17 @@ svg {
   fill: none;
 }
 
-.center {
-  stroke: #aaa;
+.ytick-center {
+  /*stroke: cornflowerblue;*/
   /*stroke-dasharray: 6;*/
+}
+
+.ytick-inner {
+  /*stroke: #cacaca;*/
+  stroke: #aaa;
+}
+
+.ytick-outer {
 }
 
 .xAxis text {
@@ -31,11 +39,6 @@ svg {
 
 .holiday {
   fill: red;
-}
-
-.temp-graph path {
-  fill: url(#hatch);
-  stroke: none;
 }
 
 .legend {
@@ -57,4 +60,34 @@ svg {
 pattern#hatch line {
   stroke: #adafbf;
   stroke-width: 1;
+}
+
+.temp-graph path {
+  fill: url(#hatch);
+  stroke: none;
+}
+
+.co-graph path {
+  fill: url(#hatch);
+  stroke: brown;
+}
+
+.no2-graph path {
+  fill: url(#hatch);
+  stroke: purple;
+}
+
+.so2-graph path {
+  fill: url(#hatch);
+  stroke: red;
+}
+
+.pm10-graph path {
+  fill: url(#hatch);
+  stroke: cornflowerblue;
+}
+
+.pm2_5-graph path {
+  fill: url(#hatch);
+  stroke: green;
 }
