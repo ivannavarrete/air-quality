@@ -68,26 +68,26 @@ pattern#hatch line {
 }
 
 .co-graph path {
-  fill: url(#hatch);
-  stroke: brown;
+  fill: rgba(128, 124, 149, 0.6);
+  stroke: none;
 }
 
 .no2-graph path {
-  fill: url(#hatch);
-  stroke: purple;
+  fill: rgba(135, 175, 145, 0.6);
+  stroke: none;
 }
 
 .so2-graph path {
-  fill: url(#hatch);
-  stroke: red;
+  fill: rgba(163, 143, 129, 0.6);
+  stroke: none;
 }
 
 .pm10-graph path {
-  fill: url(#hatch);
-  stroke: cornflowerblue;
+  fill: rgba(221, 174, 92, 0.6);
+  stroke: none;
 }
 
 .pm2_5-graph path {
-  fill: url(#hatch);
-  stroke: green;
+  fill: rgba(232, 104, 82, 0.6);
+  stroke: none;
 }

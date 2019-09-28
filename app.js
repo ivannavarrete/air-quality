@@ -9,7 +9,7 @@ window.onload = async () => {
   const outerRadius = Math.min(w, h) / 2;
   const innerRadius = Math.floor(outerRadius / 4 + 5);
   const stackGraphsRadius = innerRadius * 2;
-  const stackGraphWidth = (stackGraphsRadius - innerRadius) / 4;
+  const stackGraphWidth = (stackGraphsRadius - innerRadius) / 5;
 
   const tempOuterRadius = outerRadius;
 
@@ -18,7 +18,11 @@ window.onload = async () => {
       Date: parseDate(d.Date),
       DateRaw: parseDate(d.Date).getTime(),
       Temp: parseFloat(d.Temp),
-      CO: parseInt(d.CO)
+      CO: parseInt(d.CO),
+      NO2: parseInt(d.NO2),
+      SO2: parseInt(d.SO2),
+      PM10: parseInt(d.PM10),
+      PM2_5: parseInt(d.PM2_5)
     })
   );
 
@@ -41,12 +45,10 @@ window.onload = async () => {
 
   drawLegend(g, data);
 
-  const _data = data.map(d => d.CO);
-  drawStackGraph("co", _data, innerRadius + stackGraphWidth * 0, stackGraphWidth, g);
-  drawStackGraph("no2", _data, innerRadius + stackGraphWidth * 1, stackGraphWidth, g);
-  drawStackGraph("so2", _data, innerRadius + stackGraphWidth * 2, stackGraphWidth, g);
-  drawStackGraph("pm10", _data, innerRadius + stackGraphWidth * 3, stackGraphWidth, g);
-  drawStackGraph("pm2_5", _data, innerRadius + stackGraphWidth * 4, stackGraphWidth, g);
+  ["co", "no2", "so2", "pm10", "pm2_5"].forEach((name, i) => {
+    drawStackGraph(name, data.map(d => d[name.toUpperCase()]), innerRadius + stackGraphWidth * i, stackGraphWidth, g);
+  });
+
   drawTempGraph(g, data, y, "temp");
 }
 
@@ -59,16 +61,15 @@ const formatDate = (d) => (
 )
 
 const drawStackGraph = (name, data, innerRadius, width, g) => {
-  const xStep = Math.PI * 2.0 / data.length;
+  const xStep = Math.PI * 2 / data.length;
 
-  const x = d3.scaleBand()
-      .domain(data)
-      .range([0, Math.PI * 2])
-      .align(0);
+  const x = d3.scaleLinear()
+      .domain([0, data.length])
+      .range([xStep / 2, Math.PI * 2 - xStep / 2]);
 
   const y = d3.scaleLinear()
       .domain([0, d3.max(data)])
-      .range([innerRadius, innerRadius + width]);
+      .range([innerRadius + width, innerRadius]);
 
   const area = d3.areaRadial()
       .angle((d, i) => i * xStep + xStep / 2)
@@ -76,18 +77,26 @@ const drawStackGraph = (name, data, innerRadius, width, g) => {
       .outerRadius(d => y(d))
       .curve(d3.curveBasis)
 
+
+  const arc = d3.arc()
+      .innerRadius(innerRadius + width)
+      .outerRadius(d => y(d))
+      .startAngle((d, i) => x(i))
+      .endAngle((d, i) => x(i) + xStep);
+
   const graph = g.append("g")
       .attr("class", `${name}-graph`)
+
+  graph.selectAll("path")
+    .data(data)
+    .enter().append("path")
+        .attr("d", arc);
 
   graph.append("g")
       .attr("class", "y-axis")
     .append("circle")
       .attr("class", "ytick ytick-inner")
       .attr("r", innerRadius)
-
-  graph.append("path")
-      .datum(data)
-      .attr("d", area);
 }
 
 d3.scaleRadial = () => {
