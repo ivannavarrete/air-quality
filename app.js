@@ -157,12 +157,14 @@ const drawLegend = (g, data) => {
   const yearText = startYear === endYear ? startYear : `${startYear}   ${endYear}`;
   const monthText = `${startMonth} - ${endMonth}`;
 
-  g.append("text")
+  const legend = g.append("text")
       .attr("class", "legend")
-    .append("tspan")
+
+  legend.append("tspan")
       .attr("class", "month")
-      .text(monthText)
-    .append("tspan")
+      .text(monthText);
+
+  legend.append("tspan")
       .attr("class", "year")
       .attr("x", 0)
       .attr("dy", "1.2em")
