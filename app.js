@@ -11,8 +11,6 @@ window.onload = async () => {
   const stackGraphsRadius = innerRadius * 2;
   const stackGraphWidth = (stackGraphsRadius - innerRadius) / 5;
 
-  const tempOuterRadius = outerRadius;
-
   const holidays  = await d3.csv("data/holidays.csv", (d) => parseDate(d.Date).getTime());
   const data      = await d3.csv("data/air_quality.csv", (d) => ({
       Date: parseDate(d.Date),
@@ -27,7 +25,7 @@ window.onload = async () => {
   );
 
   const g = svg.append("g")
-    .attr("transform", `translate(${w / 2 + margin.left}, ${tempOuterRadius + margin.top})`);
+    .attr("transform", `translate(${w / 2 + margin.left}, ${outerRadius + margin.top})`);
 
   const xStep = Math.PI * 2 / data.length;
 
@@ -52,8 +50,6 @@ window.onload = async () => {
   drawTempGraph(g, data, y, "temp");
 }
 
-const cleanupData = (d, i) => ({ Date: parseDate(d.Date), Temp: +d.Temp });
-
 const parseDate = d3.timeParse("%Y-%m-%d");
 
 const formatDate = (d) => (
@@ -70,13 +66,6 @@ const drawStackGraph = (name, data, innerRadius, width, g) => {
   const y = d3.scaleLinear()
       .domain([0, d3.max(data)])
       .range([innerRadius + width, innerRadius]);
-
-  const area = d3.areaRadial()
-      .angle((d, i) => i * xStep + xStep / 2)
-      .innerRadius(innerRadius)
-      .outerRadius(d => y(d))
-      .curve(d3.curveBasis)
-
 
   const arc = d3.arc()
       .innerRadius(innerRadius + width)
@@ -97,24 +86,6 @@ const drawStackGraph = (name, data, innerRadius, width, g) => {
     .append("circle")
       .attr("class", "ytick ytick-inner")
       .attr("r", innerRadius)
-}
-
-d3.scaleRadial = () => {
-  const linear = d3.scaleLinear();
-  const scale  = (x) => Math.sqrt(linear(x));
-  const square = (x) => x * x;
-
-  scale.domain  = (args) => args && args.length ? (linear.domain(args), scale)
-                                                : linear.domain();
-
-  scale.range   = (args) => args && args.length ? (linear.range(args.map(square)), scale)
-                                                : linear.range().map(Math.sqrt);
-
-  scale.ticks       = linear.ticks;
-  scale.tickFormat  = linear.tickFormat;
-  scale.nice        = (count) => (linear.nice(count), scale);
-
-  return scale;
 }
 
 const drawXAxis = (g, data, holidays, x, innerRadius, outerRadius) => {
