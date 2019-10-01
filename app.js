@@ -44,7 +44,7 @@ window.onload = async () => {
   drawLegend(g, data);
 
   ["co", "no2", "so2", "pm10", "pm2_5"].forEach((name, i) => {
-    drawStackGraph(name, data.map(d => d[name.toUpperCase()]), innerRadius + stackGraphWidth * i, stackGraphWidth, g);
+    drawStackGraph(name, data, innerRadius + stackGraphWidth * i, stackGraphWidth, x, g);
   });
 
   drawTempGraph(g, data, y, "temp");
@@ -56,22 +56,18 @@ const formatDate = (d) => (
   d.Date.toLocaleDateString(locale, { day: "numeric", month: "short" })
 )
 
-const drawStackGraph = (name, data, innerRadius, width, g) => {
-  const xStep = Math.PI * 2 / data.length;
-
-  const x = d3.scaleLinear()
-      .domain([0, data.length])
-      .range([xStep / 2, Math.PI * 2 - xStep / 2]);
+const drawStackGraph = (name, data, innerRadius, width, x, g) => {
+  const accessor = name.toUpperCase();
 
   const y = d3.scaleLinear()
-      .domain([0, d3.max(data)])
+      .domain([0, d3.max(data, d => d[accessor])])
       .range([innerRadius + width, innerRadius]);
 
   const arc = d3.arc()
       .innerRadius(innerRadius + width)
-      .outerRadius(d => y(d))
-      .startAngle((d, i) => x(i))
-      .endAngle((d, i) => x(i) + xStep);
+      .outerRadius(d => y(d[accessor]))
+      .startAngle(d => x(d.DateRaw))
+      .endAngle(d => x(d.DateRaw) + x.bandwidth());
 
   const graph = g.append("g")
       .attr("class", `${name}-graph`)
