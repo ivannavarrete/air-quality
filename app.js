@@ -85,7 +85,11 @@ const drawStackGraph = (name, data, innerRadius, width, x, g) => {
 }
 
 const drawXAxis = (g, data, holidays, x, innerRadius, outerRadius) => {
-  const labelMargin = 10;
+  const hitBox = d3.arc()
+      .innerRadius(innerRadius)
+      .outerRadius(outerRadius)
+      .startAngle(d => x(d.DateRaw))
+      .endAngle(d => x(d.DateRaw) + x.bandwidth())
 
   const xAxis = g.append("g")
       .attr("class", "x-axis");
@@ -93,30 +97,23 @@ const drawXAxis = (g, data, holidays, x, innerRadius, outerRadius) => {
   const xTick = xAxis.selectAll("g")
     .data(data)
     .enter().append("g")
-      .attr("transform", (d) => `rotate(${x(d.DateRaw) * 180 / Math.PI - 90})`)
 
-  xTick.append("line")
-      .attr("class", "xtick")
-      .attr("x1", innerRadius)
-      .attr("x2", outerRadius)
+  xTick.append("path")
+      .attr("class", "hitbox")
+      .attr("d", hitBox);
+
+  const labelMargin = 10;
+  const rotateDate = (d) => (x(d.DateRaw) + x.bandwidth() / 2 - Math.PI * 0.5) * 180 / Math.PI;
 
   xTick.append("text")
-      .classed("holiday", (d) => (holidays.includes(d.DateRaw)))
+      .classed("holiday", d => holidays.includes(d.DateRaw))
       .attr("text-anchor", (d, i) => (i < (data.length / 2) ? "start" : "end"))
-      .attr("transform", (d, i) => (
-          `rotate(${180 / data.length})
-           translate(${outerRadius + labelMargin}, 0)
-           rotate(${i < (data.length / 2) ? 0 : 180})`
-      ))
+      .attr("transform", (d, i) => (`
+         rotate(${rotateDate(d)})
+         translate(${outerRadius + labelMargin}, 0)
+         rotate(${i < (data.length / 2) ? 0 : 180})
+      `))
       .text(d => formatDate(d));
-
-  const xLegend = xAxis.append("g")
-      .attr("transform", `rotate(${(270 - 360 / data.length / 2)})`)
-
-  xLegend.append("line")
-      .attr("class", "xtick")
-      .attr("x1", innerRadius)
-      .attr("x2", outerRadius)
 }
 
 const drawYAxis = (g, y) => {
