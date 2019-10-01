@@ -1,3 +1,16 @@
+:root {
+  --co-color: rgba(128, 124, 149, 0.6);
+  --no2-color: rgba(135, 175, 145, 0.6);
+  --so2-color: rgba(163, 143, 129, 0.6);
+  --pm10-color: rgba(241, 173, 18, 0.6);
+  --pm2_5-color: rgba(232, 104, 82, 0.6);
+
+  --xtick-color: #f0f0f0;
+  --ytick-color: #ddd;
+  --ytick-color-levels: #ddd;
+  --temp-graph-color: #adafbf;
+}
+
 svg {
   font-family: sans-serif;
   font-size: 10px;
@@ -6,18 +19,31 @@ svg {
 .x-axis {
 }
 
+.x-axis .hitbox {
+  fill: none;
+  pointer-events: all;
+  stroke: var(--xtick-color);
+}
+
+.x-axis .hitbox:hover {
+  fill: #eee;
+}
+
 .y-axis {
-  stroke: red;
 }
 
 .xtick {
-  stroke: #e8e8e8;
   fill: none;
 }
 
 .ytick {
-  stroke: #ddd;
+  stroke: var(--ytick-color);
   fill: none;
+}
+
+.y-axis text {
+  font-size: 0.8em;
+  text-anchor: middle;
 }
 
 .ytick-center {
@@ -26,15 +52,15 @@ svg {
 }
 
 .ytick-inner {
-  /*stroke: #cacaca;*/
   stroke: #aaa;
 }
 
 .ytick-outer {
 }
 
-.xAxis text {
+.x-axis text {
   alignment-baseline: middle;
+  cursor: default;
 }
 
 .holiday {
@@ -47,6 +73,7 @@ svg {
   white-space: pre;
   alignment-baseline: middle;
   text-anchor: middle;
+  cursor: default;
 }
 
 .legend .month {
@@ -58,8 +85,12 @@ svg {
 }
 
 pattern#hatch line {
-  stroke: #adafbf;
+  stroke: var(--temp-graph-color);
   stroke-width: 1;
+}
+
+.graphs, .y-axis {
+  pointer-events: none;
 }
 
 .temp-graph path {
@@ -67,27 +98,69 @@ pattern#hatch line {
   stroke: none;
 }
 
-.co-graph path {
-  fill: rgba(128, 124, 149, 0.6);
+.co-graph .values {
+  fill: var(--co-color);
   stroke: none;
 }
 
-.no2-graph path {
-  fill: rgba(135, 175, 145, 0.6);
+.no2-graph .values {
+  fill: var(--no2-color);
   stroke: none;
 }
 
-.so2-graph path {
-  fill: rgba(163, 143, 129, 0.6);
+.so2-graph .values {
+  fill: var(--so2-color);
   stroke: none;
 }
 
-.pm10-graph path {
-  fill: rgba(221, 174, 92, 0.6);
+.pm10-graph .values {
+  fill: var(--pm10-color);
   stroke: none;
 }
 
-.pm2_5-graph path {
-  fill: rgba(232, 104, 82, 0.6);
+.pm2_5-graph .values {
+  fill: var(--pm2_5-color);
   stroke: none;
+}
+
+.pollutant-standard {
+  stroke: #777;
+  stroke-dasharray: 2 2;
+  fill: none;
+}
+
+.temp {
+  fill: var(--temp-graph-color);
+  stroke: none;
+}
+
+.co {
+  color: var(--co-color);
+  fill: var(--co-color);
+}
+
+.so2 {
+  color: var(--so2-color);
+  fill: var(--so2-color);
+}
+
+.no2 {
+  color: var(--no2-color);
+  fill: var(--no2-color);
+}
+
+.pm10 {
+  color: var(--pm10-color);
+  fill: var(--pm10-color);
+}
+
+.pm2_5 {
+  color: var(--pm2_5-color);
+  fill: var(--pm2_5-color);
+}
+
+
+.levels {
+  fill: none;
+  stroke: var(--ytick-color-levels);
 }

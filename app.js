@@ -24,7 +24,7 @@ window.onload = async () => {
     })
   );
 
-  const g = svg.append("g")
+  let g = svg.append("g")
     .attr("transform", `translate(${w / 2 + margin.left}, ${outerRadius + margin.top})`);
 
   const xStep = Math.PI * 2 / data.length;
@@ -43,11 +43,24 @@ window.onload = async () => {
 
   drawLegend(g, data);
 
-  ["co", "no2", "so2", "pm10", "pm2_5"].forEach((name, i) => {
-    drawStackGraph(name, data, innerRadius + stackGraphWidth * i, stackGraphWidth, x, g);
+  g = g.append("g")
+      .attr("class", "graphs");
+
+  [["co",4],["no2",80],["so2",150],["pm10",150],["pm2_5",75]].forEach(([name, standard], i) => {
+    const radius = innerRadius + stackGraphWidth * i;
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d[name.toUpperCase()])])
+      .range([radius + stackGraphWidth, radius])
+
+    drawStackGraph(name, data, radius, stackGraphWidth, x, y, g);
+    drawStackYAxis(name, standard, y, g);
   });
 
-  drawTempGraph(g, data, y, "temp");
+  g = g.append("g")
+      .attr("class", "temp-graph")
+
+  drawTempGraph(g, data, x, y);
 }
 
 const parseDate = d3.timeParse("%Y-%m-%d");
@@ -56,26 +69,54 @@ const formatDate = (d) => (
   d.Date.toLocaleDateString(locale, { day: "numeric", month: "short" })
 )
 
-const drawStackGraph = (name, data, innerRadius, width, x, g) => {
+const drawStackGraph = (name, data, innerRadius, width, x, y, g) => {
   const accessor = name.toUpperCase();
 
-  const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d[accessor])])
-      .range([innerRadius + width, innerRadius]);
+  const [min, max] = y.domain();
+  const step = (max - min) / 5;
 
   const arc = d3.arc()
-      .innerRadius(innerRadius + width)
-      .outerRadius(d => y(d[accessor]))
+    .innerRadius(innerRadius + width)
+    .outerRadius(d => y(d[accessor]))
+    .startAngle(d => x(d.DateRaw))
+    .endAngle(d => x(d.DateRaw) + x.bandwidth());
+
+  const arcLevels = (n) => {
+    const level = (d) => d3.max([y(step * n), y(d[accessor])])
+
+    return d3.arc()
+      .innerRadius(d => level(d))
+      .outerRadius(d => level(d))
       .startAngle(d => x(d.DateRaw))
-      .endAngle(d => x(d.DateRaw) + x.bandwidth());
+      .endAngle(d => x(d.DateRaw) + x.bandwidth())
+  };
+
+  const line = d3.lineRadial()
+    .angle(d => x(d.DateRaw))
+    .radius(d => y(d[accessor]))
+    .curve(d3.curveStepAfter)
 
   const graph = g.append("g")
       .attr("class", `${name}-graph`)
 
   graph.selectAll("path")
     .data(data)
-    .enter().append("path")
-        .attr("d", arc);
+    .join("g")
+      .call(g => g.append("path")
+        .attr("class", "levels")
+        .attr("d", arcLevels(1)))
+      .call(g => g.append("path")
+        .attr("class", "levels")
+        .attr("d", arcLevels(2)))
+      .call(g => g.append("path")
+        .attr("class", "levels")
+        .attr("d", arcLevels(3)))
+      .call(g => g.append("path")
+        .attr("class", "levels")
+        .attr("d", arcLevels(4)))
+      .call(g => g.append("path")
+        .attr("class", "values")
+        .attr("d", arc))
 
   graph.append("g")
       .attr("class", "y-axis")
@@ -116,9 +157,28 @@ const drawXAxis = (g, data, holidays, x, innerRadius, outerRadius) => {
       .text(d => formatDate(d));
 }
 
+const drawStackYAxis = (name, standard, y, g) => {
+  const pollutantAxis = g.append("g")
+    .attr("class", "y-axis");
+
+  pollutantAxis.append("circle")
+    .attr("class", "pollutant-standard")
+    .attr("r", y(standard));
+
+  pollutantAxis.append("text")
+    .attr("class", name)
+    .attr("y", -y(standard))
+    .attr("dy", "0.35em")
+    .text(standard);
+}
+
 const drawYAxis = (g, y) => {
   const yLevels = 10;
   const [innerRadius, outerRadius] = y.range();
+
+  const yTick = d3.lineRadial()
+      .angle(d => x(d.DateRaw) + x.bandwidth() / 2)
+      .radius(d => y(d))
 
   const yAxis = g.append("g")
     .attr("class", "y-axis");
@@ -127,12 +187,18 @@ const drawYAxis = (g, y) => {
       .attr("class", "ytick ytick-inner")
       .attr("r", innerRadius);
 
-  yAxis.selectAll("circle")
+  yAxis.call(g => g.selectAll("g")
     .data(y.ticks(yLevels))
-    .enter().append("circle")
-      .attr("class", "ytick")
-      .classed("ytick-center", d => d === 0)
-      .attr("r", y);
+    .join("g")
+      .call(g => g.append("circle")
+          .attr("class", "ytick")
+          .classed("ytick-center", d => d === 0)
+          .attr("r", y))
+      .call(g => g.append("text")
+          .attr("class", "temp")
+          .attr("y", d => -y(d))
+          .attr("dy", "0.35em")
+          .text(d => d)))
 
   yAxis.append("circle")
       .attr("class", "ytick ytick-outer")
@@ -164,20 +230,16 @@ const drawLegend = (g, data) => {
       .text(yearText);
 }
 
-const drawTempGraph = (g, data, y) => {
-  const xStep = Math.PI * 2.0 / data.length;
+const drawTempGraph = (g, data, x, y) => {
   const [innerRadius, _] = y.range();
 
   const graph = d3.areaRadial()
-    .angle((d, i) => i * xStep + xStep / 2)
-    .innerRadius(y(0))
-    .outerRadius(d => y(d.Temp))
-    .curve(d3.curveCatmullRom)
-  //.defined((d, i) => d.Temp > 0)
+      .angle(d => x(d.DateRaw) + x.bandwidth() / 2)
+      .innerRadius(y(0))
+      .outerRadius(d => y(d.Temp))
+      .curve(d3.curveCatmullRom)
 
-  const lineGraph = g.append("g")
-      .attr("class", "temp-graph")
-    .append("path")
+  const lineGraph = g.append("path")
       .datum(data)
       .attr("d", graph);
 }
