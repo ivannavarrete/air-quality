@@ -15,7 +15,7 @@ window.onload = async () => {
   const data      = await d3.csv("data/air_quality.csv", (d) => ({
       Date: parseDate(d.Date),
       DateRaw: parseDate(d.Date).getTime(),
-      Temp: parseFloat(d.Temp),
+      TEMP: parseFloat(d.Temp),
       CO: parseInt(d.CO),
       NO2: parseInt(d.NO2),
       SO2: parseInt(d.SO2),
@@ -24,7 +24,7 @@ window.onload = async () => {
     })
   );
 
-  let g = svg.append("g")
+  let gMain = svg.append("g")
     .attr("transform", `translate(${w / 2 + margin.left}, ${outerRadius + margin.top})`);
 
   const xStep = Math.PI * 2 / data.length;
@@ -35,32 +35,56 @@ window.onload = async () => {
     .align(0);
 
   const y = d3.scaleLinear()
-    .domain(d3.extent(data.map(d => d.Temp)))
+    .domain(d3.extent(data.map(d => d.TEMP)))
     .range([innerRadius + stackGraphWidth * 5, outerRadius]);
 
-  drawXAxis(g, data, holidays, x, innerRadius, outerRadius);
-  drawYAxis(g, y);
+  drawXAxis(gMain, data, holidays, x, innerRadius, outerRadius);
+  drawYAxis(gMain, y);
 
-  drawLegend(g, data);
+  drawLegend(gMain, data);
 
-  g = g.append("g")
-      .attr("class", "graphs");
+  const _gTooltips = d3.create("svg:g")
+    .attr("class", "tooltips")
+
+  const gTooltips = _gTooltips.selectAll("g")
+    .data(data)
+    .enter().append("g")
+      .attr("class", d => `tooltip-${d.DateRaw}`)
+
+  gGraphs = gMain.append("g").attr("class", "graphs");
 
   [["co",4],["no2",80],["so2",150],["pm10",150],["pm2_5",75]].forEach(([name, standard], i) => {
-    const radius = innerRadius + stackGraphWidth * i;
+    const _innerRadius = innerRadius + stackGraphWidth * i;
+    const _outerRadius = _innerRadius + stackGraphWidth;
 
     const y = d3.scaleLinear()
       .domain([0, d3.max(data, d => d[name.toUpperCase()])])
-      .range([radius + stackGraphWidth, radius])
+      .range([_outerRadius, _innerRadius])
 
-    drawStackGraph(name, data, radius, stackGraphWidth, x, y, g);
-    drawStackYAxis(name, standard, y, g);
+    drawStackGraph(name, data, _innerRadius, stackGraphWidth, x, y, gGraphs);
+    drawStackYAxis(name, standard, y, gGraphs);
+    drawTooltips(name, data, x, () => (_innerRadius + stackGraphWidth / 2), gTooltips);
   });
 
-  g = g.append("g")
-      .attr("class", "temp-graph")
+  const gTempGraph = gGraphs.append("g").attr("class", "temp-graph")
+  drawTempGraph(gTempGraph, data, x, y);
+  drawTooltips("temp", data, x, y, gTooltips);
 
-  drawTempGraph(g, data, x, y);
+  gMain.append(() => _gTooltips.node());
+
+  bindEvents(data, x, y, () => drawTempGraph(gMain, data, x, y));
+}
+
+const drawTooltips = (name, data, x, y, g) => {
+  const accessor = name.toUpperCase();
+
+  g.append("text")
+    .attr("transform", d => (`
+      rotate(${rotateText(d, x)})
+      translate(${y(d[accessor])}, 0)
+      rotate(${-rotateText(d, x)})
+    `))
+    .text(d => d[accessor]);
 }
 
 const parseDate = d3.timeParse("%Y-%m-%d");
@@ -68,6 +92,10 @@ const parseDate = d3.timeParse("%Y-%m-%d");
 const formatDate = (d) => (
   d.Date.toLocaleDateString(locale, { day: "numeric", month: "short" })
 )
+
+const rotateText = (d, x) => (
+  (x(d.DateRaw) + x.bandwidth() / 2 - Math.PI * 0.5) * 180 / Math.PI
+);
 
 const drawStackGraph = (name, data, innerRadius, width, x, y, g) => {
   const accessor = name.toUpperCase();
@@ -144,15 +172,15 @@ const drawXAxis = (g, data, holidays, x, innerRadius, outerRadius) => {
       .attr("d", hitBox);
 
   const labelMargin = 10;
-  const rotateDate = (d) => (x(d.DateRaw) + x.bandwidth() / 2 - Math.PI * 0.5) * 180 / Math.PI;
+  const inRightHalf = (i) => (i < (data.length / 2));
 
   xTick.append("text")
       .classed("holiday", d => holidays.includes(d.DateRaw))
-      .attr("text-anchor", (d, i) => (i < (data.length / 2) ? "start" : "end"))
+      .attr("text-anchor", (_, i) => inRightHalf(i) ? "start" : "end")
       .attr("transform", (d, i) => (`
-         rotate(${rotateDate(d)})
+         rotate(${rotateText(d, x)})
          translate(${outerRadius + labelMargin}, 0)
-         rotate(${i < (data.length / 2) ? 0 : 180})
+         rotate(${inRightHalf(i) ? 0 : 180})
       `))
       .text(d => formatDate(d));
 }
@@ -189,6 +217,7 @@ const drawYAxis = (g, y) => {
 
   yAxis.call(g => g.selectAll("g")
     .data(y.ticks(yLevels))
+    //.data([-20, -15, -10, -5, 0, 5, 10, 15])
     .join("g")
       .call(g => g.append("circle")
           .attr("class", "ytick")
@@ -236,10 +265,24 @@ const drawTempGraph = (g, data, x, y) => {
   const graph = d3.areaRadial()
       .angle(d => x(d.DateRaw) + x.bandwidth() / 2)
       .innerRadius(y(0))
-      .outerRadius(d => y(d.Temp))
+      .outerRadius(d => y(d.TEMP))
       .curve(d3.curveCatmullRom)
 
   const lineGraph = g.append("path")
       .datum(data)
       .attr("d", graph);
+}
+
+const bindEvents = (data, x, y, redraw) => {
+  d3.selectAll(".x-axis .hitbox")
+    .on("mouseenter", function(d) {
+      d3.select(this.parentElement).raise();
+
+      d3.selectAll(`.tooltip-${d.DateRaw}`)
+        .classed("show", true)
+    })
+    .on("mouseleave", d => {
+      d3.selectAll(`.tooltip-${d.DateRaw}`)
+        .classed("show", false)
+    })
 }

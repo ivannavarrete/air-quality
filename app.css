@@ -16,9 +16,6 @@ svg {
   font-size: 10px;
 }
 
-.x-axis {
-}
-
 .x-axis .hitbox {
   fill: none;
   pointer-events: all;
@@ -26,7 +23,17 @@ svg {
 }
 
 .x-axis .hitbox:hover {
-  fill: #eee;
+  fill: rgba(200, 200, 200, 0.1);
+  stroke: #ccc;
+}
+
+.x-axis text {
+  alignment-baseline: middle;
+  cursor: default;
+}
+
+.holiday {
+  fill: red;
 }
 
 .y-axis {
@@ -56,15 +63,6 @@ svg {
 }
 
 .ytick-outer {
-}
-
-.x-axis text {
-  alignment-baseline: middle;
-  cursor: default;
-}
-
-.holiday {
-  fill: red;
 }
 
 .legend {
@@ -163,4 +161,16 @@ pattern#hatch line {
 .levels {
   fill: none;
   stroke: var(--ytick-color-levels);
+}
+
+.tooltips text {
+  display: none;
+  pointer-events: none;
+  alignment-baseline: middle;
+  text-anchor: middle;
+  fill: #555;
+}
+
+.tooltips .show text {
+  display: block;
 }
