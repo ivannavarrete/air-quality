@@ -63,6 +63,7 @@ svg {
 }
 
 .ytick-outer {
+  stroke: #cecece;
 }
 
 .legend {
@@ -80,6 +81,16 @@ svg {
 
 .legend .year {
   font-size: 16px;
+}
+
+.legend .back {
+  stroke: #a2bded;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.legend .back:hover {
+  stroke: #5c8fe9;
 }
 
 pattern#hatch line {

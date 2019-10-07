@@ -1,5 +1,3 @@
-const locale = "us";
-
 let outerRadius = null;
 let innerRadius = null;
 let stackGraphsRadius = null;
@@ -7,6 +5,7 @@ let stackGraphWidth = null;
 
 let holidays = [];
 let data = [];
+let state = "date";
 
 window.onload = async () => {
   const svg = d3.select("svg");
@@ -19,19 +18,9 @@ window.onload = async () => {
   stackGraphsRadius = innerRadius * 2 + 20;
   stackGraphWidth = (stackGraphsRadius - innerRadius) / 5;
 
-  holidays  = await d3.csv("data/holidays.csv", (d) => parseDate(d.Date).getTime());
-  data      = await d3.csv("data/air_quality.csv", (d) => ({
-      Date: parseDate(d.Date),
-      DateRaw: parseDate(d.Date).getTime(),
-      TEMP: parseFloat(d.Temp),
-      CO: parseInt(d.CO),
-      NO2: parseInt(d.NO2),
-      SO2: parseInt(d.SO2),
-      PM10: parseInt(d.PM10),
-      PM2_5: parseInt(d.PM2_5)
-    })
-  );
-
+  holidays  = await d3.csv("data/holidays.csv", (d) => parseDate(d.Date).getTime() + 1000);
+  data      = await d3.csv("data/2018.csv", (d) => (buildDayData(d)));
+  data = data.slice(0, 59);
 
   const g = svg.append("g")
     .attr("transform", `translate(${w / 2 + margin.left}, ${outerRadius + margin.top})`);
@@ -97,7 +86,7 @@ const draw = (data, holidays) => {
 
   drawTooltips(data, x, y, "temp", gTooltips);
 
-  bindEvents(data, x, y);
+  bindEvents();
 }
 
 const drawTooltips = (data, x, y, name, g) => {
@@ -255,8 +244,10 @@ const drawLegend = (data) => {
 
   let monthText = "";
   let yearText = "";
+  let navLink = null;
 
   if (_start === _end) {
+    navLink = "<-";
     yearText = start.getFullYear();
     monthText = formatDate(start, { day: "numeric", month: "short" });
 
@@ -279,6 +270,12 @@ const drawLegend = (data) => {
     .attr("x", 0)
     .attr("dy", "1.2em")
     .text(yearText);
+
+  legend.append("tspan")
+    .attr("class", "back")
+    .attr("x", 0)
+    .attr("dy", "-3em")
+    .text(navLink);
 }
 
 const drawTempGraph = (data, x, y) => {
@@ -296,7 +293,7 @@ const drawTempGraph = (data, x, y) => {
     .attr("d", graph);
 }
 
-const bindEvents = (data, x, y) => {
+const bindEvents = () => {
   d3.selectAll(".x-axis .hitbox")
     .on("mouseenter", function(d) {
       d3.select(this.parentNode).raise();
@@ -308,13 +305,47 @@ const bindEvents = (data, x, y) => {
       d3.selectAll(`.tooltip-${d.DateRaw}`)
         .classed("show", false)
     })
+
+  if (state === "day") {
+    d3.selectAll(".x-axis .hitbox").on("click", null);
+
+    d3.select(".back")
+      .on("click", function(d) {
+        state = "date";
+        draw(data, holidays);
+      });
+  } else {
+    d3.selectAll(".x-axis .hitbox").on("click", async d => {
+      state = "day";
+      draw(await loadDayData(formatDateString(d.Date)), holidays);
+    });
+  }
 }
 
-const parseDate = d3.timeParse("%Y-%m-%d");
-const parseTime = d3.timeParse("%H:%M:%S");
+const buildDayData = (d) => ({
+  Date: parseTime(d.Date),
+  DateRaw: parseTime(d.Date).getTime(),
+  TEMP: parseFloat(d.Temp),
+  CO: parseInt(d.CO),
+  NO2: parseInt(d.NO2),
+  SO2: parseInt(d.SO2),
+  PM10: parseInt(d.PM10),
+  PM2_5: parseInt(d.PM2_5)
+});
+
+const loadDayData = (date) => (
+  d3.csv(`data/${date}.csv`, (d) => buildDayData(d))
+);
+
+const parseDate = d3.utcParse("%Y-%m-%d");
+const parseTime = d3.utcParse("%Y-%m-%d %H:%M:%S");
 
 const formatDate = (date, format = null) => (
-  date.toLocaleDateString(locale, format || { day: "numeric", month: "short" })
+  d3.utcFormat("%e %b")(date)
+)
+
+const formatDateString = (date) => (
+  new Date(date).toISOString().slice(0, 10)
 )
 
 const rotateText = (d, x) => (
